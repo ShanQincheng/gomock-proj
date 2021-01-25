@@ -2,14 +2,13 @@ package internal
 
 import (
 	"fmt"
+	"github.com/karrick/godirwalk"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
-
-	"github.com/karrick/godirwalk"
 )
 
 type mkProject struct {
@@ -27,65 +26,65 @@ func NewMkProject() (*mkProject, chan error) {
 	return mkp, done
 }
 
-func (m *mkProject) QueueDirs() chan<- string {
+func (m *mkProject) Mocking() chan<- string {
 	return m.dirs
 }
 
-func (m *mkProject) QueueClose() {
+func (m *mkProject) Stop() {
 	close(m.dirs)
 }
 
 func (m *mkProject) mockDirs(done chan<- error) {
 	defer close(done)
 
-	mocker := make(chan int, runtime.NumCPU()) // concurrent mocker number is 512
-	defer close(mocker)
 	for dir := range m.dirs {
-		err := godirwalk.Walk(dir, &godirwalk.Options{
-			Callback: func(osPathname string, de *godirwalk.Dirent) error {
-				if err := m.ignore(de, osPathname); err != nil {
-					switch {
-					case isIsDirError(err), isExtNotGoError(err):
-						fmt.Printf("ignore: %s\n", err)
-						return nil
-					default:
-						fmt.Printf("ignore: %s\n", err)
-						return godirwalk.SkipThis
-					}
-				}
-
-				mocker <- 1
-				go func() {
-					if err := m.mockFile(osPathname); err != nil {
-						fmt.Printf("mock file: %s, %s\n", osPathname, err)
-					} else {
-						fmt.Printf("mock file: %s\n", osPathname)
-					}
-					<-mocker
-				}()
-				return nil
-			},
-			Unsorted: true, // (optional) set true for faster yet non-deterministic enumeration (see godoc)
-		})
-
-		for { // wait mocker finish
-			if len(mocker) == 0 {
-				break
-			}
-			time.Sleep(time.Second)
+		if err := m.traverseDirAndMock(dir); err != nil {
+			done <- fmt.Errorf("mkProject.traverseDirAndMock: %s", err)
+			return
 		}
-
-		if err != nil {
-			done <- fmt.Errorf("godirwalk.Walk: %s", err)
-		} else {
-			done <- nil
-		}
-
-		return
 	}
 
 	done <- nil
-	return
+}
+
+func (m *mkProject) traverseDirAndMock(dir string) error {
+	mocker := make(chan int, runtime.NumCPU()) // concurrent number == logic cpu num
+	defer close(mocker)
+
+	err := godirwalk.Walk(dir, &godirwalk.Options{
+		Callback: func(osPathname string, de *godirwalk.Dirent) error {
+			if err := m.ignore(de, osPathname); err != nil {
+				switch {
+				case isIsDirError(err), isExtNotGoError(err):
+					return nil // do not mock dir or none-go file, continue traverse
+				default:
+					fmt.Printf("ignore: %s\n", err)
+					return godirwalk.SkipThis // skip dir that do not belong to this project
+				}
+			}
+
+			mocker <- 1
+			go func() { // concurrent call mockgen generate mock file
+				if err := m.mockFile(osPathname); err != nil {
+					fmt.Printf("mock file: %s, %s\n", osPathname, err)
+				} else {
+					fmt.Printf("mock file: %s\n", osPathname)
+				}
+				<-mocker
+			}()
+			return nil
+		},
+		Unsorted: true, // (optional) set true for faster yet non-deterministic enumeration (see godoc)
+	})
+
+	for { // wait all mocker finish
+		if len(mocker) == 0 {
+			break
+		}
+		time.Sleep(time.Millisecond)
+	}
+
+	return err
 }
 
 func (m *mkProject) mockFile(osPathname string) error {
