@@ -9,10 +9,7 @@ import (
 
 var rootCmd = &cobra.Command{
 	Use:   "gomock-proj",
-	Short: "gomock-proj continusly call gomock to mock whole project",
-	Run: func(cmd *cobra.Command, args []string) {
-
-	},
+	Short: "gomock-proj traverses directories while calling mockgen to mock entire project",
 }
 
 func Execute() {

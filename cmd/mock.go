@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/shanqincheng/gomock-proj/internal"
 	"github.com/spf13/cobra"
@@ -10,19 +11,26 @@ import (
 func init() {
 	rootCmd.AddCommand(mockCmd)
 
-	mockCmd.Flags().StringVarP(&dir, "dir", "d", ".", "dir to mock from")
+	mockCmd.Flags().StringSliceVarP(&dir, "dir", "d", nil,
+		"Dir to traverse and do mock. Given more than one dir is acceptable. Given dot . means traverse current path all directories")
+	if err := mockCmd.MarkFlagRequired("dir"); err != nil {
+		fmt.Printf("mockCmd.MarkFlagRequired: %s", err)
+		os.Exit(1)
+	}
 }
 
-var dir string
+var dir []string
 
 var mockCmd = &cobra.Command{
 	Use:   "mock",
 	Short: "mock use gomock to mock interface",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("mock dir: %s\n", dir)
+		fmt.Printf("mock dir: %v\n", dir)
 
 		mkdirs, done := internal.NewMkProject()
-		mkdirs.Mocking() <- dir
+		for _, d := range dir {
+			mkdirs.Mocking() <- d
+		}
 		mkdirs.Stop()
 		<-done
 		fmt.Printf("gomock-proj mock dir finish\n")
