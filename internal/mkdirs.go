@@ -15,6 +15,7 @@ type mkProject struct {
 	dirs chan string
 }
 
+// NewMkProject new mkProject instance.
 func NewMkProject() (*mkProject, chan error) {
 	mkp := &mkProject{
 		dirs: make(chan string),
@@ -97,7 +98,7 @@ func (m *mkProject) mockFile(osPathname string) error {
 	flag0 := `-source`
 	flag1 := `-destination`
 	cmd := exec.Command(mockgen, flag0, osPathname, flag1, mockFilePath)
-	output, err := cmd.CombinedOutput()
+	output, err := cmd.CombinedOutput() // $ mockgen -source=foo.go -destination=test/mocks/foo.go
 	if err != nil {
 		return fmt.Errorf("cmd.CombinedOutput: %s, command: %s, output: %s", err, cmd.String(), string(output))
 	}
