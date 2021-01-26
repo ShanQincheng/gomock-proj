@@ -1,5 +1,5 @@
 # Gomock-proj 
-[![Build Status](https://travis-ci.org/ShanQincheng/gomock-proj.svg?branch=master)](https://travis-ci.org/ShanQincheng/gomock-proj)
+[![Build Status](https://travis-ci.com/ShanQincheng/gomock-proj.svg?branch=master)](https://travis-ci.com/ShanQincheng/gomock-proj)
 [![Go Report Card](https://goreportcard.com/badge/github.com/shanqincheng/gomock-proj)](https://goreportcard.com/report/github.com/shanqincheng/gomock-proj)
 
 # Overview
