@@ -12,6 +12,7 @@ var rootCmd = &cobra.Command{
 	Short: "gomock-proj traverses directories while calling mockgen to mock entire project",
 }
 
+// Execute cobra root cmd entry
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println("call rootCmd error")
