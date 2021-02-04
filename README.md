@@ -52,4 +52,4 @@ gomock-proj mock --dir="foo,bar"
 
 # License
 
-Gomock-proj is released under the Apache 2.0 license. See [LICENSE.txt](https://github.com/spf13/cobra/blob/master/LICENSE.txt)
+Gomock-proj is released under the Apache 2.0 license. See [LICENSE.txt](https://github.com/ShanQincheng/gomock-proj/blob/master/LICENSE.txt)
